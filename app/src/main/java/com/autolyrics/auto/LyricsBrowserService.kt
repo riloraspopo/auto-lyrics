@@ -154,23 +154,18 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
                 items.add(buildTextItem("no_media", "Play a song to see lyrics"))
             }
             LyricsStatus.LOADING -> {
-                addTrackHeader(state, items)
                 items.add(buildTextItem("loading", "Loading lyrics…"))
             }
             LyricsStatus.NOT_FOUND -> {
-                addTrackHeader(state, items)
                 items.add(buildTextItem("not_found", "No lyrics found for this track"))
             }
             LyricsStatus.ERROR -> {
-                addTrackHeader(state, items)
                 items.add(buildTextItem("error", "Error loading lyrics"))
             }
             LyricsStatus.FOUND -> {
-                addTrackHeader(state, items)
                 buildWindowedLyrics(state, items)
             }
             LyricsStatus.PLAIN_ONLY -> {
-                addTrackHeader(state, items)
                 if (state.lines.isEmpty()) {
                     items.add(buildTextItem("empty", "♪"))
                 } else {
