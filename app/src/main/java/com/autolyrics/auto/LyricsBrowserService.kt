@@ -1,5 +1,6 @@
 package com.autolyrics.auto
 
+import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.media.session.MediaController
@@ -619,10 +620,17 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
             val component = android.content.ComponentName(
                 this, com.autolyrics.media.MediaListenerService::class.java
             )
-            sessionManager.getActiveSessions(component)
-                .firstOrNull { it.packageName != packageName && it.playbackState?.state == PlaybackState.STATE_PLAYING }
-                ?: sessionManager.getActiveSessions(component)
-                    .firstOrNull { it.packageName != packageName }
+            
+            val sessions = sessionManager.getActiveSessions(component)
+            
+            // 1. Cari yang sedang play dan bukan app ini
+            sessions.firstOrNull { it.packageName != packageName && it.playbackState?.state == PlaybackState.STATE_PLAYING }
+                // 2. Jika tidak ada, cari YouTube Music
+                ?: sessions.firstOrNull { it.packageName == "com.google.android.apps.youtube.music" }
+                // 3. Jika tidak ada, cari Spotify
+                ?: sessions.firstOrNull { it.packageName == "com.spotify.music" }
+                // 4. Jika tidak ada, ambil apa saja yang bukan app ini
+                ?: sessions.firstOrNull { it.packageName != packageName }
         } catch (_: SecurityException) {
             null
         }
@@ -630,7 +638,21 @@ class LyricsBrowserService : MediaBrowserServiceCompat() {
 
     private inner class SessionCallback : MediaSessionCompat.Callback() {
         override fun onPlay() {
-            getActiveMediaController()?.transportControls?.play()
+            val controller = getActiveMediaController()
+            if (controller == null) {
+                // Fallback: buka youtube music jika tidak ada controller aktif
+                try {
+                    val intent = packageManager.getLaunchIntentForPackage("com.google.android.apps.youtube.music")
+                    if (intent != null) {
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        startActivity(intent)
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            } else {
+                controller.transportControls?.play()
+            }
         }
 
         override fun onPause() {
