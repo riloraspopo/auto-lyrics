@@ -45,26 +45,20 @@
             </intent-filter>
         </service>
 
-        <!-- Android Auto Media Browser Service -->
+        <!-- Android Auto Car App Service (Template) -->
         <service
-            android:name=".auto.LyricsBrowserService"
+            android:name=".auto.LyricsCarAppService"
             android:exported="true"
             android:label="Lyrics">
             <intent-filter>
-                <action android:name="android.media.browse.MediaBrowserService" />
+                <action android:name="androidx.car.app.CarAppService" />
+                <category android:name="androidx.car.app.category.POI" />
             </intent-filter>
         </service>
 
-        <!-- Start service on boot / app update so AA discovers it -->
-        <receiver
-            android:name=".auto.BootReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
-            </intent-filter>
-        </receiver>
-
+        <meta-data
+            android:name="androidx.car.app.minCarApiLevel"
+            android:value="1" />
         <meta-data
             android:name="com.google.android.gms.car.application"
             android:resource="@xml/automotive_app_desc" />
