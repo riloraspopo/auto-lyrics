@@ -44,3 +44,13 @@ jobs:
         with:
           name: auto-lyrics-${{ steps.version.outputs.name }}-release
           path: app/build/outputs/apk/release/auto-lyrics-${{ steps.version.outputs.name }}-release.apk
+
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: v${{ steps.version.outputs.name }}
+          name: Auto Lyrics v${{ steps.version.outputs.name }}
+          artifacts: app/build/outputs/apk/release/auto-lyrics-${{ steps.version.outputs.name }}-release.apk
+          allowUpdates: true
+          replacesArtifacts: true
+          artifactErrorsFailBuild: true

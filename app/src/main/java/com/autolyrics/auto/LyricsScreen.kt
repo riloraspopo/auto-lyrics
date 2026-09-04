@@ -1,5 +1,6 @@
 package com.autolyrics.auto
 
+import android.content.Context
 import androidx.car.app.CarContext
 import androidx.car.app.Screen
 import androidx.car.app.model.*
@@ -17,6 +18,7 @@ import kotlinx.coroutines.launch
 class LyricsScreen(carContext: CarContext) : Screen(carContext), DefaultLifecycleObserver {
 
     private val mediaTracker = MediaTracker.getInstance(carContext)
+    private val prefs = carContext.getSharedPreferences("auto_lyrics_prefs", Context.MODE_PRIVATE)
     private var currentState: LyricsState = mediaTracker.state.value
 
     init {
@@ -55,11 +57,11 @@ class LyricsScreen(carContext: CarContext) : Screen(carContext), DefaultLifecycl
                     paneBuilder.addRow(Row.Builder().setTitle("♪").build())
                     return buildTemplate(paneBuilder, titleText)
                 }
-                val currentIdx = state.currentIndex.coerceIn(0, lines.lastIndex)
+                val currentIdx = resolveCurrentIndex(state)
 
                 val displayCount = 4
                 val desiredCurrentRow = 1
-                val winStart = maxOf(0, currentIdx - desiredCurrentRow)
+                val winStart = if (currentIdx >= 0) maxOf(0, currentIdx - desiredCurrentRow) else 0
                 val winEnd = minOf(lines.size, winStart + displayCount)
                 val adjStart = maxOf(0, winEnd - displayCount)
 
@@ -96,5 +98,26 @@ class LyricsScreen(carContext: CarContext) : Screen(carContext), DefaultLifecycl
             .setTitle(titleText)
             .setHeaderAction(Action.APP_ICON)
             .build()
+    }
+
+    private fun resolveCurrentIndex(state: LyricsState): Int {
+        val lines = state.lines
+        if (lines.isEmpty()) return -1
+
+        val adjustedPositionMs = try {
+            mediaTracker.getCurrentPositionMs() + prefs.getLong("aa_offset_ms", 0L)
+        } catch (_: Exception) {
+            return state.currentIndex.coerceIn(-1, lines.lastIndex)
+        }
+
+        var idx = -1
+        for (i in lines.indices) {
+            if (lines[i].timeMs <= adjustedPositionMs) {
+                idx = i
+            } else {
+                break
+            }
+        }
+        return idx
     }
 }
