@@ -7,7 +7,6 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.autolyrics.media.MediaTracker
-import com.autolyrics.model.LyricLine
 import com.autolyrics.model.LyricsState
 import com.autolyrics.model.LyricsStatus
 import kotlinx.coroutines.delay
@@ -36,29 +35,12 @@ class LyricsScreen(carContext: CarContext) : Screen(carContext), DefaultLifecycl
         // Loop to sync lyrics position rendering
         lifecycleScope.launch {
             while (isActive) {
-                delay(500)
+                delay(150)
                 if (currentState.isPlaying && currentState.status == LyricsStatus.FOUND) {
                     invalidate()
                 }
             }
         }
-    }
-
-    private fun getPositionMs(): Long {
-        return try {
-            mediaTracker.getCurrentPositionMs()
-        } catch (_: Exception) {
-            0L
-        }
-    }
-
-    private fun findLineIndex(lines: List<LyricLine>, posMs: Long): Int {
-        var idx = -1
-        for (i in lines.indices) {
-            if (lines[i].timeMs <= posMs) idx = i
-            else break
-        }
-        return idx
     }
 
     override fun onGetTemplate(): Template {
@@ -69,12 +51,15 @@ class LyricsScreen(carContext: CarContext) : Screen(carContext), DefaultLifecycl
         when (state.status) {
             LyricsStatus.FOUND -> {
                 val lines = state.lines
-                val posMs = getPositionMs()
-                val currentIdx = findLineIndex(lines, posMs).coerceAtLeast(0)
+                if (lines.isEmpty()) {
+                    paneBuilder.addRow(Row.Builder().setTitle("♪").build())
+                    return buildTemplate(paneBuilder, titleText)
+                }
+                val currentIdx = state.currentIndex.coerceIn(0, lines.lastIndex)
 
                 val displayCount = 4
-                val half = displayCount / 2
-                val winStart = maxOf(0, currentIdx - half)
+                val desiredCurrentRow = 1
+                val winStart = maxOf(0, currentIdx - desiredCurrentRow)
                 val winEnd = minOf(lines.size, winStart + displayCount)
                 val adjStart = maxOf(0, winEnd - displayCount)
 
@@ -103,12 +88,13 @@ class LyricsScreen(carContext: CarContext) : Screen(carContext), DefaultLifecycl
             }
         }
 
-        // Action needed by templates as headers
-        val headerAction = Action.APP_ICON
+        return buildTemplate(paneBuilder, titleText)
+    }
 
+    private fun buildTemplate(paneBuilder: Pane.Builder, titleText: String): Template {
         return PaneTemplate.Builder(paneBuilder.build())
             .setTitle(titleText)
-            .setHeaderAction(headerAction)
+            .setHeaderAction(Action.APP_ICON)
             .build()
     }
 }
