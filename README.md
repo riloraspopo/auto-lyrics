@@ -1,6 +1,14 @@
-# Auto Lyrics
+# Auto Lyrics (Personal Edit)
 
-An Android Auto app that displays synced lyrics for the currently playing song, powered by [LRCLIB](https://lrclib.net/).
+> **Note:** This is a personal edit/fork of Auto Lyrics by Rilo. 
+> 
+> **Differences & Custom Features in this version:**
+> - **Removed Media Player Identity:** Stripped media intents/services so Android Auto doesn't confuse the app as a media source/player.
+> - **Multi-Source Fetching:** Added SyncLRC alongside LRCLIB for better lyrics coverage.
+> - **On-Device Translation:** Uses Google ML Kit to automatically translate lyrics locally on the device.
+> - **Fixed AA Rendering Lag:** Patched the Android Auto UI refresh loop so lyrics sync smoothly across continuous track changes without hitting AA rate limits.
+
+An Android Auto app that displays synced lyrics for the currently playing song, powered by [LRCLIB](https://lrclib.net/) and SyncLRC.
 
 ## Features
 
@@ -9,6 +17,7 @@ An Android Auto app that displays synced lyrics for the currently playing song, 
 - **Phone companion view** — see lyrics on your phone screen too
 - **Automatic song detection** — picks up whatever is playing via media session APIs
 - **Multi-strategy lyrics lookup** — tries exact match first, falls back to keyword search
+- **Offline ML Translation** — translates lyrics seamlessly
 
 ## Architecture
 
