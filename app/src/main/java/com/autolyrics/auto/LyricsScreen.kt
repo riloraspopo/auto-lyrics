@@ -10,6 +10,7 @@ import androidx.lifecycle.lifecycleScope
 import com.autolyrics.media.MediaTracker
 import com.autolyrics.model.LyricsState
 import com.autolyrics.model.LyricsStatus
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.isActive
@@ -21,28 +22,42 @@ class LyricsScreen(carContext: CarContext) : Screen(carContext), DefaultLifecycl
     private val prefs = carContext.getSharedPreferences("auto_lyrics_prefs", Context.MODE_PRIVATE)
     private var currentState: LyricsState = mediaTracker.state.value
 
+    private var stateJob: Job? = null
+    private var loopJob: Job? = null
+    private var lastRenderedIdx = -1
+
     init {
         lifecycle.addObserver(this)
     }
 
     override fun onStart(owner: LifecycleOwner) {
-        // Collect state changes
-        lifecycleScope.launch {
+        stateJob?.cancel()
+        stateJob = lifecycleScope.launch {
             mediaTracker.state.collectLatest { state ->
                 currentState = state
+                lastRenderedIdx = -1
                 invalidate()
             }
         }
 
-        // Loop to sync lyrics position rendering
-        lifecycleScope.launch {
+        loopJob?.cancel()
+        loopJob = lifecycleScope.launch {
             while (isActive) {
                 delay(150)
                 if (currentState.isPlaying && currentState.status == LyricsStatus.FOUND) {
-                    invalidate()
+                    val currentIdx = resolveCurrentIndex(currentState)
+                    if (currentIdx != lastRenderedIdx) {
+                        lastRenderedIdx = currentIdx
+                        invalidate()
+                    }
                 }
             }
         }
+    }
+
+    override fun onStop(owner: LifecycleOwner) {
+        stateJob?.cancel()
+        loopJob?.cancel()
     }
 
     override fun onGetTemplate(): Template {
