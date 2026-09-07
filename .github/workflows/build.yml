@@ -33,24 +33,41 @@ jobs:
           VERSION=$(grep 'versionName' app/build.gradle.kts | head -1 | sed 's/.*"\(.*\)".*/\1/')
           echo "name=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Rename APK
+      - name: Rename APKs
         run: |
-          APK_PATH=$(ls app/build/outputs/apk/release/app-release*.apk | head -1)
-          cp "$APK_PATH" \
-             app/build/outputs/apk/release/auto-lyrics-${{ steps.version.outputs.name }}-release.apk
+          for file in app/build/outputs/apk/release/app-*.apk; do
+            filename=$(basename -- "$file")
+            newname=$(echo "$filename" | sed "s/app-/auto-lyrics-${{ steps.version.outputs.name }}-/")
+            mv "$file" "app/build/outputs/apk/release/$newname"
+          done
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: auto-lyrics-${{ steps.version.outputs.name }}-release
-          path: app/build/outputs/apk/release/auto-lyrics-${{ steps.version.outputs.name }}-release.apk
+          name: auto-lyrics-${{ steps.version.outputs.name }}-apks
+          path: app/build/outputs/apk/release/auto-lyrics-*.apk
 
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
           tag: v${{ steps.version.outputs.name }}
           name: Auto Lyrics v${{ steps.version.outputs.name }}
-          artifacts: app/build/outputs/apk/release/auto-lyrics-${{ steps.version.outputs.name }}-release.apk
+          artifacts: "app/build/outputs/apk/release/auto-lyrics-*.apk"
           allowUpdates: true
           replacesArtifacts: true
           artifactErrorsFailBuild: true
+
+      - name: Send APKs to Telegram
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_TO: ${{ secrets.TELEGRAM_TO }}
+        run: |
+          if [ -n "$TELEGRAM_TOKEN" ] && [ -n "$TELEGRAM_TO" ]; then
+            for file in app/build/outputs/apk/release/auto-lyrics-*.apk; do
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument" \
+                -F chat_id="${TELEGRAM_TO}" \
+                -F document=@"$file"
+            done
+          else
+            echo "Telegram credentials not set. Skipping..."
+          fi

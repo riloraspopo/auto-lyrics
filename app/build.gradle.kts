@@ -11,8 +11,8 @@ android {
         applicationId = "com.autolyrics"
         minSdk = 26
         targetSdk = 34
-        versionCode = 33
-        versionName = "1.9.9-beta"
+        versionCode = 34
+        versionName = "2.0.0"
     }
 
     signingConfigs {
@@ -50,6 +50,15 @@ android {
     packaging {
         jniLibs {
             useLegacyPackaging = true
+        }
+    }
+
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+            isUniversalApk = true
         }
     }
 }
