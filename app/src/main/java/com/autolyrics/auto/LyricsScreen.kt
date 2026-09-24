@@ -43,7 +43,7 @@ class LyricsScreen(carContext: CarContext) : Screen(carContext), DefaultLifecycl
         loopJob?.cancel()
         loopJob = lifecycleScope.launch {
             while (isActive) {
-                delay(150)
+                
                 if (currentState.isPlaying && currentState.status == LyricsStatus.FOUND) {
                     val currentIdx = resolveCurrentIndex(currentState)
                     if (currentIdx != lastRenderedIdx) {
